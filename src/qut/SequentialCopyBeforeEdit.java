@@ -1,30 +1,22 @@
 package qut;
 
-import jaligner.*;
-import jaligner.matrix.*;
-import edu.au.jacobi.pattern.*;
+import edu.au.jacobi.pattern.Match;
+import edu.au.jacobi.pattern.Series;
+import jaligner.BLOSUM62;
+import jaligner.Sequence;
+import jaligner.SmithWatermanGotoh;
+import jaligner.matrix.Matrix;
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-class Sequential extends Thread
+public class SequentialCopyBeforeEdit
 {
     private static HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
     private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
-
-
-    // =================== New ====================
-    private String ecoliFilename;
-    private static String referenceFile;
-    static ReentrantLock lock1 = new ReentrantLock();
-
-    public Sequential(String ecoliFilename, String referenceFile) {
-        this.ecoliFilename = ecoliFilename;
-        this.referenceFile = referenceFile;
-    }
-    // ============================================
 
     static
     {
@@ -64,7 +56,7 @@ class Sequential extends Thread
            upStreamDistance = gene.location-1;
 
         if (gene.strand == 1)
-            return new NucleotideSequence(java.util.Arrays.copyOfRange(dna.bytes, gene.location-upStreamDistance-1, gene.location-1));
+            return new NucleotideSequence(Arrays.copyOfRange(dna.bytes, gene.location-upStreamDistance-1, gene.location-1));
         else
         {
             byte[] result = new byte[upStreamDistance];
@@ -80,86 +72,6 @@ class Sequential extends Thread
         return BioPatterns.getBestMatch(sigma70_pattern, upStreamRegion.toString());
     }
 
-    private static GenbankRecord Parse(String file) throws IOException
-    {
-        GenbankRecord record = new GenbankRecord();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-        record.Parse(reader);
-        reader.close();
-        return record;
-    }
-
-    // TODO:
-    // - create 4 threads for 4 Ecoli
-    // - tag ID: 1 2 3 4
-    // - print the ID tagged with the dir
-    // - process and print <ID> - <promoter found>
-
-    public void run() {
-        // Get referenceGene (which Ecoli genes will be compared to)
-        List<Gene> referenceGenes = null;
-        try {
-            referenceGenes = ParseReferenceGenes(referenceFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-//        // Get Ecoli file in 'dir'
-//        for (String filename : ListGenbankFiles(dir))
-//        {
-            System.out.println(ecoliFilename);
-
-        GenbankRecord record = null;
-        try {
-            record = Parse(ecoliFilename);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (Gene referenceGene : referenceGenes)
-            {
-		        System.out.println(referenceGene.name);
-
-		        // For each gene in the record
-                for (Gene gene : record.genes)
-                    // Compare gene from reference with gene from records
-                    // Homologous: determine if 2 genes serve the same purpose,
-                    //      using SmithWatermanGototh algorithm (expensive)
-                    if (Homologous(gene.sequence, referenceGene.sequence))
-                    {
-                        lock1.lock();
-                        // Extract upstreamRegion
-                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-	                    // Predict whether if it is a promoter
-                        Match prediction = PredictPromoter(upStreamRegion);
-                        if (prediction != null)
-                        {
-                            // Store result in 'concensus'
-                            consensus.get(referenceGene.name).addMatch(prediction);
-                            consensus.get("all").addMatch(prediction);
-                        }
-                        lock1.unlock();
-                    }
-            }
-//        }
-
-        // Print result from 'concensus'
-        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
-           System.out.println(entry.getKey() + " " + entry.getValue());
-    }
-
-//    public static void main(String[] args) throws FileNotFoundException, IOException
-//    {
-////        run("src/referenceGenes.list", "src/Ecoli");
-//        //////////////////
-//
-//        // Get Ecoli filename in 'dir'
-//        for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
-//            new Sequential(ecoliFilename).start();
-//        }
-//    }
-}
-
-class Parallel {
     private static void ProcessDir(List<String> list, File dir)
     {
         if (dir.exists())
@@ -177,12 +89,64 @@ class Parallel {
         return list;
     }
 
+    private static GenbankRecord Parse(String file) throws IOException
+    {
+        GenbankRecord record = new GenbankRecord();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+        record.Parse(reader);
+        reader.close();
+        return record;
+    }
+
+    // TODO:
+    // - create 4 threads for 4 Ecoli
+    // - tag ID: 1 2 3 4
+    // - print the ID tagged with the dir
+    // - process and print <ID> - <promoter found>
+
+    public static void run(String referenceFile, String dir) throws FileNotFoundException, IOException
+    {
+        // Get referenceGene (which Ecoli genes will be compared to)
+        List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+
+        // Get Ecoli file in 'dir'
+        for (String filename : ListGenbankFiles(dir))
+        {
+            System.out.println(filename);
+            GenbankRecord record = Parse(filename);
+            for (Gene referenceGene : referenceGenes)
+            {
+		        System.out.println(referenceGene.name);
+
+		        // For each gene in the record
+                for (Gene gene : record.genes)
+                    // Compare gene from reference with gene from records
+                    // Homologous: determine if 2 genes serve the same purpose,
+                    //      using SmithWatermanGototh algorithm (expensive)
+                    if (Homologous(gene.sequence, referenceGene.sequence))
+                    {
+
+                        // Extract upstreamRegion
+                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
+	                    // Predict whether if it is a promoter
+                        Match prediction = PredictPromoter(upStreamRegion);
+                        if (prediction != null)
+                        {
+                            // Store result in 'concensus'
+                            consensus.get(referenceGene.name).addMatch(prediction);
+                            consensus.get("all").addMatch(prediction);
+                        }
+                    }
+            }
+        }
+
+        // Print result from 'concensus'
+        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+           System.out.println(entry.getKey() + " " + entry.getValue());
+    }
+
     public static void main(String[] args) throws FileNotFoundException, IOException
     {
-        // Get Ecoli filename in 'dir'
-//        List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
-        for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
-            new Sequential(ecoliFilename, "src/referenceGenes.list").start();
-        }
+        run("src/referenceGenes.list", "src/Ecoli");
     }
 }
