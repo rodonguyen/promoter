@@ -97,8 +97,9 @@ public class Sequential
 
     public static void run(String referenceFile, String dir) throws FileNotFoundException, IOException
     {
-
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+
+        // one
         for (String filename : ListGenbankFiles(dir))
         {
             System.out.println(filename);
