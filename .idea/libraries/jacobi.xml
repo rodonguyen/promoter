@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jacobi">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/jacobi.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
