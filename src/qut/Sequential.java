@@ -94,6 +94,7 @@ class Sequential extends Thread
     // - tag ID: 1 2 3 4
     // - print the ID tagged with the dir
     // - process and print <ID> - <promoter found>
+    // - parallelStream lib
 
     public void run() {
         // Get referenceGene (which Ecoli genes will be compared to)
@@ -160,6 +161,8 @@ class Sequential extends Thread
 }
 
 class Parallel {
+    static ReentrantLock lock1 = new ReentrantLock();
+
     private static void ProcessDir(List<String> list, File dir)
     {
         if (dir.exists())
@@ -181,8 +184,20 @@ class Parallel {
     {
         // Get Ecoli filename in 'dir'
 //        List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
+
+//        long startTime = System.nanoTime();
+//        long timeElapsed = startTime - System.nanoTime();
+//        System.out.println("Execution time: " + timeElapsed/1000000 + "ms");
+
+
         for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
             new Sequential(ecoliFilename, "src/referenceGenes.list").start();
         }
+
+        System.out.println("" +
+                "\n-------------------------------" +
+                "\nSmall progress is still progress" +
+                "\nYou will get there Rodo! 6" +
+                "\n-------------------------------");
     }
 }

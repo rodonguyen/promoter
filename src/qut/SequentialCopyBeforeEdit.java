@@ -98,12 +98,6 @@ public class SequentialCopyBeforeEdit
         return record;
     }
 
-    // TODO:
-    // - create 4 threads for 4 Ecoli
-    // - tag ID: 1 2 3 4
-    // - print the ID tagged with the dir
-    // - process and print <ID> - <promoter found>
-
     public static void run(String referenceFile, String dir) throws FileNotFoundException, IOException
     {
         // Get referenceGene (which Ecoli genes will be compared to)
@@ -148,5 +142,10 @@ public class SequentialCopyBeforeEdit
     public static void main(String[] args) throws FileNotFoundException, IOException
     {
         run("src/referenceGenes.list", "src/Ecoli");
+        System.out.println("" +
+                "\n-------------------------------" +
+                "\nSmall progree is still progress" +
+                "\nYou will get there Rodo! 6" +
+                "\n-------------------------------");
     }
 }
