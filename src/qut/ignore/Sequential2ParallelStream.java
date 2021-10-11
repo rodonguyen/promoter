@@ -100,10 +100,12 @@ public class Sequential2ParallelStream
     {
         // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+        long startTime = System.currentTimeMillis();
 
         // ****************************************************
-//        for (Gene referenceGene : referenceGenes)
+        // for (Gene referenceGene : referenceGenes)
         referenceGenes.parallelStream().forEach(referenceGene -> {
+            System.out.println(referenceGene.name);
             // ********************************************************
             // Get Ecoli file in 'dir'
             for (String filename : ListGenbankFiles(dir))
@@ -115,8 +117,6 @@ public class Sequential2ParallelStream
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                System.out.println(referenceGene.name);
 
                 // ************************************************
 		        // For each gene in the genes record
@@ -144,15 +144,17 @@ public class Sequential2ParallelStream
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
+
+        System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException
     {
         run("src/referenceGenes.list", "src/Ecoli");
-        System.out.println("" +
+        System.out.println(
                 "\n-------------------------------" +
-                "\nSmall progree is still progress" +
-                "\nYou will get there Rodo! 6" +
+                "\nSmall progress is still progress." +
+                "\nYou will get there Rodo! Aim for 7, miss to 6." +
                 "\n-------------------------------");
     }
 }
