@@ -114,13 +114,13 @@ public class Sequential2ParallelStream
         // for (Gene referenceGene : referenceGenes)
         referenceGenes.parallelStream().forEach(referenceGene ->
         {
-            System.out.println(referenceGene.name);
+//            System.out.println(referenceGene.name);
             // ********************************************************
             // Get Ecoli file in 'dir'
              List<String> filenames = ListGenbankFiles(dir);
              filenames.parallelStream().forEach(filename -> {
 //            for (String filename : ListGenbankFiles(dir)) {
-                System.out.println(filename);
+//                System.out.println(filename);
                 GenbankRecord record = null;
                 try {
                     record = Parse(filename);
@@ -130,23 +130,26 @@ public class Sequential2ParallelStream
 
                 // ******************************************************
 		        // For each gene in the genes record
-                for (Gene gene : record.genes)
-                    // Compare gene from reference with gene from records
-                    // Homologous: determine if 2 genes serve the same purpose,
-                    //      using SmithWatermanGototh algorithm (expensive)
-                    if (Homologous(gene.sequence, referenceGene.sequence))
-                    {
-                        // Extract upstreamRegion
-                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-	                    // Predict whether if it is a promoter
-                        Match prediction = PredictPromoter(upStreamRegion);
-                        if (prediction != null)
-                        {
-                            // Store result in 'concensus'
-                            consensus.get(referenceGene.name).addMatch(prediction);
-                            consensus.get("all").addMatch(prediction);
-                        }
-                    }
+                 List<Gene> genes = record.genes;
+                 GenbankRecord finalRecord = record;
+                 genes.parallelStream().forEach(gene -> {
+                     // for (Gene gene : record.genes)
+                     // Compare gene from reference with gene from records
+                     // Homologous: determine if 2 genes serve the same purpose,
+                     //      using SmithWatermanGototh algorithm (expensive)
+                     if (Homologous(gene.sequence, referenceGene.sequence)) {
+                         // Extract upstreamRegion
+                         NucleotideSequence upStreamRegion = GetUpstreamRegion(finalRecord.nucleotides, gene);
+                         // Predict whether if it is a promoter
+                         Match prediction = PredictPromoter(upStreamRegion);
+                         if (prediction != null) {
+                             // Store result in 'concensus'
+                             consensus.get(referenceGene.name).addMatch(prediction);
+                             consensus.get("all").addMatch(prediction);
+//                             System.out.println("Finish a gene prediction.");
+                         }
+                     }
+                 });
             });
         });
 
@@ -168,5 +171,6 @@ public class Sequential2ParallelStream
     }
 
     // TODO: Implement garbage collector
-    // TODO: Parallelize inner For loop
+    //
+    // Now: 8 threads opened, paralleled 3 for loops 11/10 22.30
 }
