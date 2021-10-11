@@ -7,8 +7,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-class Sequential extends Thread
-{
+class Sequential implements Runnable {
     private static HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
     private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
@@ -142,7 +141,6 @@ class Sequential extends Thread
                     }
             }
 //        }
-
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
@@ -172,7 +170,6 @@ class Parallel {
                 else
                     list.add(file.getPath());
     }
-
     private static List<String> ListGenbankFiles(String dir)
     {
         List<String> list = new ArrayList<String>();
@@ -180,19 +177,37 @@ class Parallel {
         return list;
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException
-    {
+    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
         // Get Ecoli filename in 'dir'
 //        List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
 
-//        long startTime = System.nanoTime();
-//        long timeElapsed = startTime - System.nanoTime();
-//        System.out.println("Execution time: " + timeElapsed/1000000 + "ms");
+        long startTime = System.nanoTime();
+        long timeElapsed = startTime - System.nanoTime();
+        System.out.println("Execution time: " + timeElapsed/1000000 + "ms");
 
+        List<Thread> threads = new ArrayList<Thread>();
+        List<String> listGenBankFiles = ListGenbankFiles("src/Ecoli");
+        for ( int i=0; i < listGenBankFiles.size(); i++) {
+            String ecoliFilename = listGenBankFiles.get(i);
+            Runnable task = new Sequential(ecoliFilename, "src/referenceGenes.list");
+            Thread thread = new Thread(task);
+            thread.setName(String.valueOf(i));
+            thread.start();
 
-        for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
-            new Sequential(ecoliFilename, "src/referenceGenes.list").start();
+            threads.add(thread);
         }
+
+        int running = 0;
+        do {
+            running = 0;
+            for (Thread thread : threads) {
+                if (thread.isAlive()) {
+                    running++;
+                }
+            }
+            System.out.println("We have " + running + " running threads. ");
+            Thread.sleep(10000);
+        } while (running > 0);
 
         System.out.println("" +
                 "\n-------------------------------" +
