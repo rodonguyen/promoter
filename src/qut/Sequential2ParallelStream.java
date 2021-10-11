@@ -104,7 +104,7 @@ public class Sequential2ParallelStream
         // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
         //   2nd answer
         // https://www.javacodemonk.com/java-8-parallel-stream-custom-threadpool-48643a91
-        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "8");
 
         // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
@@ -117,10 +117,9 @@ public class Sequential2ParallelStream
             System.out.println(referenceGene.name);
             // ********************************************************
             // Get Ecoli file in 'dir'
-            // List<String> filenames = ListGenbankFiles(dir);
-            // filenames.parallelStream().forEach(filename -> {
-            for (String filename : ListGenbankFiles(dir))
-            {
+             List<String> filenames = ListGenbankFiles(dir);
+             filenames.parallelStream().forEach(filename -> {
+//            for (String filename : ListGenbankFiles(dir)) {
                 System.out.println(filename);
                 GenbankRecord record = null;
                 try {
@@ -148,7 +147,7 @@ public class Sequential2ParallelStream
                             consensus.get("all").addMatch(prediction);
                         }
                     }
-            }
+            });
         });
 
         // Print result from 'concensus'
