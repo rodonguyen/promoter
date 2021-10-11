@@ -170,5 +170,4 @@ public class Sequential2ParallelStream
 
     // TODO: Implement garbage collector
     // TODO: Parallelize inner For loop
-
 }
