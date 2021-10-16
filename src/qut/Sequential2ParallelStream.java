@@ -9,11 +9,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Sequential2ParallelStream
 {
-    private static HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
-    private static ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
+    // Changed them to final
+    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
+    private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     // https://www.baeldung.com/java-threadlocal
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
+    static ReentrantLock lock = new ReentrantLock();
+    // https://www.linkedin.com/learning/parallel-and-concurrent-programming-with-java-1/livelock-java-demo?u=57080313
 
     static
     {
@@ -110,17 +113,17 @@ public class Sequential2ParallelStream
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         long startTime = System.currentTimeMillis();
 
-        // ***********************************************************
-        // for (Gene referenceGene : referenceGenes)
-        referenceGenes.parallelStream().forEach(referenceGene ->
+        // 1***********************************************************
+         for (Gene referenceGene : referenceGenes)
+//        referenceGenes.parallelStream().forEach(referenceGene ->
         {
-//            System.out.println(referenceGene.name);
-            // ********************************************************
+            System.out.println(referenceGene.name);
+            // 2********************************************************
             // Get Ecoli file in 'dir'
-             List<String> filenames = ListGenbankFiles(dir);
-             filenames.parallelStream().forEach(filename -> {
+            List<String> filenames = ListGenbankFiles(dir);
+            filenames.parallelStream().forEach(filename -> {
 //            for (String filename : ListGenbankFiles(dir)) {
-//                System.out.println(filename);
+                System.out.println(filename);
                 GenbankRecord record = null;
                 try {
                     record = Parse(filename);
@@ -128,12 +131,12 @@ public class Sequential2ParallelStream
                     e.printStackTrace();
                 }
 
-                // ******************************************************
+                // 3******************************************************
 		        // For each gene in the genes record
                  List<Gene> genes = record.genes;
                  GenbankRecord finalRecord = record;
-                 genes.parallelStream().forEach(gene -> {
-                     // for (Gene gene : record.genes)
+//                 genes.parallelStream().forEach(gene -> {
+                      for (Gene gene : record.genes) {
                      // Compare gene from reference with gene from records
                      // Homologous: determine if 2 genes serve the same purpose,
                      //      using SmithWatermanGototh algorithm (expensive)
@@ -149,9 +152,9 @@ public class Sequential2ParallelStream
 //                             System.out.println("Finish a gene prediction.");
                          }
                      }
-                 });
+                 };
             });
-        });
+        };
 
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
@@ -166,11 +169,10 @@ public class Sequential2ParallelStream
         System.out.println(
                 "\n-------------------------------" +
                 "\nSmall progress is still progress." +
-                "\nYou will get there Rodo! Aim for 7, miss to 6." +
+                "\nYou will get there Rodo! Get the 7" +
                 "\n-------------------------------");
     }
 
     // TODO: Implement garbage collector
-    //
-    // Now: 8 threads opened, paralleled 3 for loops 11/10 22.30
+    // Now: 8 threads opened, paralleled 3 for loops. 11/10 22.30
 }

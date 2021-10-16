@@ -1,22 +1,29 @@
 package qut;
 
-import edu.au.jacobi.pattern.Match;
-import edu.au.jacobi.pattern.Series;
-import jaligner.BLOSUM62;
-import jaligner.Sequence;
-import jaligner.SmithWatermanGotoh;
-import jaligner.matrix.Matrix;
-
+import jaligner.*;
+import jaligner.matrix.*;
+import edu.au.jacobi.pattern.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SequentialCopyBeforeEdit
-{
+class Sequential implements Runnable {
     private static HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
     private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
+
+
+    // =================== New ====================
+    private String ecoliFilename;
+    private static String referenceFile;
+    static ReentrantLock lock1 = new ReentrantLock();
+
+    public Sequential(String ecoliFilename, String referenceFile) {
+        this.ecoliFilename = ecoliFilename;
+        this.referenceFile = referenceFile;
+    }
+    // ============================================
 
     static
     {
@@ -25,7 +32,7 @@ public class SequentialCopyBeforeEdit
         complement['T'] = 'A'; complement['t'] = 'a';
         complement['A'] = 'T'; complement['a'] = 't';
     }
-
+                    
     private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
     {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));
@@ -56,7 +63,7 @@ public class SequentialCopyBeforeEdit
            upStreamDistance = gene.location-1;
 
         if (gene.strand == 1)
-            return new NucleotideSequence(Arrays.copyOfRange(dna.bytes, gene.location-upStreamDistance-1, gene.location-1));
+            return new NucleotideSequence(java.util.Arrays.copyOfRange(dna.bytes, gene.location-upStreamDistance-1, gene.location-1));
         else
         {
             byte[] result = new byte[upStreamDistance];
@@ -72,23 +79,6 @@ public class SequentialCopyBeforeEdit
         return BioPatterns.getBestMatch(sigma70_pattern, upStreamRegion.toString());
     }
 
-    private static void ProcessDir(List<String> list, File dir)
-    {
-        if (dir.exists())
-            for (File file : dir.listFiles())
-                if (file.isDirectory())
-                    ProcessDir(list, file);
-                else
-                    list.add(file.getPath());
-    }
-
-    private static List<String> ListGenbankFiles(String dir)
-    {
-        List<String> list = new ArrayList<String>();
-        ProcessDir(list, new File(dir));
-        return list;
-    }
-
     private static GenbankRecord Parse(String file) throws IOException
     {
         GenbankRecord record = new GenbankRecord();
@@ -98,32 +88,45 @@ public class SequentialCopyBeforeEdit
         return record;
     }
 
-    public static void run(String referenceFile, String dir) throws FileNotFoundException, IOException
-    {
+    // TODO:
+    // - create 4 threads for 4 Ecoli
+    // - tag ID: 1 2 3 4
+    // - print the ID tagged with the dir
+    // - process and print <ID> - <promoter found>
+    // - parallelStream lib
+
+    public void run() {
         // Get referenceGene (which Ecoli genes will be compared to)
-        List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+        List<Gene> referenceGenes = null;
+        try {
+            referenceGenes = ParseReferenceGenes(referenceFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        // ********************************************************
-        // Get Ecoli file in 'dir'
-        for (String filename : ListGenbankFiles(dir))
-        {
-            System.out.println(filename);
-            GenbankRecord record = Parse(filename);
+//        // Get Ecoli file in 'dir'
+//        for (String filename : ListGenbankFiles(dir))
+//        {
+            System.out.println(ecoliFilename);
 
-            // ****************************************************
-            for (Gene referenceGene : referenceGenes)
+        GenbankRecord record = null;
+        try {
+            record = Parse(ecoliFilename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for (Gene referenceGene : referenceGenes)
             {
 		        System.out.println(referenceGene.name);
 
-                // ************************************************
-		        // For each gene in the genes record
+		        // For each gene in the record
                 for (Gene gene : record.genes)
                     // Compare gene from reference with gene from records
                     // Homologous: determine if 2 genes serve the same purpose,
                     //      using SmithWatermanGototh algorithm (expensive)
                     if (Homologous(gene.sequence, referenceGene.sequence))
                     {
-
+                        lock1.lock();
                         // Extract upstreamRegion
                         NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
 	                    // Predict whether if it is a promoter
@@ -134,22 +137,87 @@ public class SequentialCopyBeforeEdit
                             consensus.get(referenceGene.name).addMatch(prediction);
                             consensus.get("all").addMatch(prediction);
                         }
+                        lock1.unlock();
                     }
             }
-        }
-
+//        }
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException
+//    public static void main(String[] args) throws FileNotFoundException, IOException
+//    {
+////        run("src/referenceGenes.list", "src/Ecoli");
+//        //////////////////
+//
+//        // Get Ecoli filename in 'dir'
+//        for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
+//            new Sequential(ecoliFilename).start();
+//        }
+//    }
+}
+
+class Parallel {
+    static ReentrantLock lock1 = new ReentrantLock();
+
+    private static void ProcessDir(List<String> list, File dir)
     {
-        run("src/referenceGenes.list", "src/Ecoli");
+        if (dir.exists())
+            for (File file : dir.listFiles())
+                if (file.isDirectory())
+                    ProcessDir(list, file);
+                else
+                    list.add(file.getPath());
+    }
+    private static List<String> ListGenbankFiles(String dir)
+    {
+        List<String> list = new ArrayList<String>();
+        ProcessDir(list, new File(dir));
+        return list;
+    }
+
+    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+        // Get Ecoli filename in 'dir'
+//        List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
+
+        long startTime = System.nanoTime();
+
+        List<Thread> threads = new ArrayList<Thread>();
+        List<String> listGenBankFiles = ListGenbankFiles("src/Ecoli");
+        for ( int i=0; i < listGenBankFiles.size(); i++) {
+            String ecoliFilename = listGenBankFiles.get(i);
+            Runnable task = new Sequential(ecoliFilename, "src/referenceGenes.list");
+            Thread thread = new Thread(task);
+            thread.setName(String.valueOf(i));
+            thread.start();
+
+            threads.add(thread);
+        }
+
+//        https://www.vogella.com/tutorials/JavaConcurrency/article.html
+//        int running = 0;
+//        do {
+//            running = 0;
+//            for (Thread thread : threads) {
+//                if (thread.isAlive()) {
+//                    running++;
+//                }
+//            }
+////            System.out.println("We have " + running + " running threads. ");
+//            Thread.sleep(1000);
+//        } while (running > 0);
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
         System.out.println("" +
                 "\n-------------------------------" +
-                "\nSmall progree is still progress" +
-                "\nYou will get there Rodo! 7" +
+                "\nSmall progress is still progress" +
+                "\nYou will get there Rodo! 6" +
                 "\n-------------------------------");
+
+        long timeElapsed = System.nanoTime() - startTime ;
+        System.out.println("Execution time: " + timeElapsed/1000000 + " ms");
     }
 }
