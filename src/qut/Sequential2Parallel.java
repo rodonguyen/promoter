@@ -5,9 +5,13 @@ import jaligner.matrix.*;
 import edu.au.jacobi.pattern.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Sequential2ParallelStream
+public class Sequential2Parallel
 {
     // Changed them to final
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
@@ -25,7 +29,7 @@ public class Sequential2ParallelStream
         complement['T'] = 'A'; complement['t'] = 'a';
         complement['A'] = 'T'; complement['a'] = 't';
     }
-                    
+
     private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
     {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));
@@ -103,8 +107,11 @@ public class Sequential2ParallelStream
         consensus.get(name).addMatch(prediction);
         consensus.get("all").addMatch(prediction);
     }
+ /* **==========================================================================================**
+    ||                                   PARALLEL STREAM CODE                                   ||
+    ||                                          below                                           || */
 
-    /**
+   /**
      * Run app by utilizing parallelStream method with an initial step of preparing data
      */
     public void runParallelStream(String referenceFile, String dir) throws IOException {
@@ -119,7 +126,7 @@ public class Sequential2ParallelStream
                 }
             }
         }
-        System.out.println("Preparing data finished!\nComputing...\n");
+        System.out.println("parallelStream - Preparing data finished!\nComputing...\n");
 
         // Initialize Threads with ParallelStream() and compute
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
@@ -135,12 +142,68 @@ public class Sequential2ParallelStream
             System.out.println(entry.getKey() + " " + entry.getValue());
     }
 
-    /**
-     * Run app by utilizing parallelStream method with an initial step of preparing data
-     */
-    public void runExecutoreService(String referenceFile, String dir) {
+/* ||                                                                                          ||
+   ||                                                                                          ||
+   **==========================================================================================**
+   ||                                  EXECUTOR SERVICE CODE                                   ||
+   ||                                          below                                           ||*/
 
+    /**
+     * Run app by utilizing executorService method
+     */
+    public void runExecutorService(String referenceFile, String dir) throws IOException, ExecutionException, InterruptedException {
+        // Set number of threads equal to number of threads available on machine
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+        List<Future> futureTasks = new ArrayList<>();
+
+        for (Gene referenceGene : referenceGenes) {
+            for (String filename : ListGenbankFiles(dir)) {
+                GenbankRecord record = Parse(filename);
+                for (Gene gene : record.genes) {
+                    Future futureTask = executorService.submit(new RunnableTask(referenceGene, gene, record));
+                    futureTasks.add(futureTask);
+                }
+            }
+        }
+        System.out.println("executorService - Preparing data finished!\nComputing...\n");
+
+        // Shut down executorService to stop accepting new tasks and to close threads as they finished
+        executorService.shutdown();
+        for (Future futureTask : futureTasks) futureTask.get();
+
+        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+            System.out.println(entry.getKey() + " " + entry.getValue());
     }
+    /**
+     * Runnable class used in 'runExecutorService'
+     */
+    public class RunnableTask implements Runnable {
+        private final Gene referenceGene;
+        private final Gene gene;
+        private final GenbankRecord record;
+
+        public RunnableTask(Gene referenceGene, Gene gene, GenbankRecord record) {
+            this.referenceGene = referenceGene;
+            this.gene = gene;
+            this.record = record;
+        }
+
+        public void run() {
+            if (Homologous(gene.sequence, referenceGene.sequence)) {
+                NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
+                Match prediction = PredictPromoter(upStreamRegion);
+                if (prediction != null) {
+                    addConsensus(referenceGene.name, prediction);
+                }
+            }
+        }
+    }
+/* ||                                                                                          ||
+   ||                                                                                          ||
+   **==========================================================================================**
+   ||                                  SEQUENTIAL CODE                                         ||
+   ||                                       below                                              ||*/
 
     public static void run(String referenceFile, String dir) throws IOException
     {
@@ -157,12 +220,12 @@ public class Sequential2ParallelStream
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         long startTime = System.currentTimeMillis();
 
-        // 1***********************************************************
+        //  ************************* 1st For Loop *******************************
          for (Gene referenceGene : referenceGenes)
 //        referenceGenes.parallelStream().forEach(referenceGene ->
         {
             System.out.println(referenceGene.name);
-            // 2********************************************************
+            // ************************ 2nd For Loop ************************
             // Get Ecoli file in 'dir'
             List<String> filenames = ListGenbankFiles(dir);
             filenames.parallelStream().forEach(filename -> {
@@ -175,7 +238,7 @@ public class Sequential2ParallelStream
                     e.printStackTrace();
                 }
 
-                // 3******************************************************
+                // ************************** 3rd For Loop *************************
 		        // For each gene in the genes record
                  List<Gene> genes = record.genes;
                  GenbankRecord finalRecord = record;
@@ -207,17 +270,14 @@ public class Sequential2ParallelStream
         System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException
-    {
-//        long startTime = System.currentTimeMillis();
-//        new Sequential2ParallelStream().runParallelStream("src/referenceGenes.list", "src/Ecoli");
-//        System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
-//        run("src/referenceGenes.list", "src/Ecoli");
-        int iteration = 4;
+    public static void main(String[] args) throws FileNotFoundException, IOException, ExecutionException, InterruptedException {
+        int iteration = 3;
         long[] durations = new long[iteration];
         for (int i=0; i<iteration; i++) {
             long start = System.currentTimeMillis();
-            new Sequential2ParallelStream().runParallelStream("referenceGenes.list", "Ecoli");
+            new Sequential2Parallel().runExecutorService("referenceGenes.list", "Ecoli");
+//            new Sequential2Parallel().runParallelStream("referenceGenes.list", "Ecoli");
+//            run("src/referenceGenes.list", "src/Ecoli");
             durations[i] = System.currentTimeMillis() - start;
         }
 
@@ -225,7 +285,7 @@ public class Sequential2ParallelStream
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
             System.out.println(entry.getKey() + " " + entry.getValue());
 
-        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000);
+        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
         System.out.println(
                 "\n-------------------------------" +
                 "\nSmall progress is still progress." +
