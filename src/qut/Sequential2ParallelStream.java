@@ -98,6 +98,50 @@ public class Sequential2ParallelStream
         return record;
     }
 
+
+    public synchronized void addConsensus(String name, Match prediction) {
+        consensus.get(name).addMatch(prediction);
+        consensus.get("all").addMatch(prediction);
+    }
+
+    /**
+     * Run app by utilizing parallelStream method with an initial step of preparing data
+     */
+    public void runParallelStream(String referenceFile, String dir) throws IOException {
+        // Preparing Data and store in List<TaskHandler>
+        List<TaskHandler> taskHandlers = new ArrayList<>();
+        List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+        for (Gene referenceGene : referenceGenes) {
+            for (String filename : ListGenbankFiles(dir)) {
+                GenbankRecord record = Parse(filename);
+                for (Gene gene : record.genes) {
+                    taskHandlers.add(new TaskHandler(referenceGene, gene, record));
+                }
+            }
+        }
+        System.out.println("Preparing data finished!\nComputing...\n");
+
+        // Initialize Threads with ParallelStream() and compute
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
+        taskHandlers.parallelStream()
+            .filter(task -> Homologous(task.getGene().sequence, task.getReferenceGene().sequence))
+            .forEach(task -> {
+                NucleotideSequence upStreamRegion = GetUpstreamRegion(task.getRecord().nucleotides, task.getGene());
+                Match prediction = PredictPromoter(upStreamRegion);
+                if (prediction != null) addConsensus(task.getReferenceGene().name, prediction);
+            });
+
+        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+            System.out.println(entry.getKey() + " " + entry.getValue());
+    }
+
+    /**
+     * Run app by utilizing parallelStream method with an initial step of preparing data
+     */
+    public void runExecutoreService(String referenceFile, String dir) {
+
+    }
+
     public static void run(String referenceFile, String dir) throws IOException
     {
         // Set fixed number of threads (thread pool)
@@ -107,7 +151,7 @@ public class Sequential2ParallelStream
         // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
         //   2nd answer
         // https://www.javacodemonk.com/java-8-parallel-stream-custom-threadpool-48643a91
-        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "8");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
 
         // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
@@ -165,7 +209,23 @@ public class Sequential2ParallelStream
 
     public static void main(String[] args) throws FileNotFoundException, IOException
     {
-        run("src/referenceGenes.list", "src/Ecoli");
+//        long startTime = System.currentTimeMillis();
+//        new Sequential2ParallelStream().runParallelStream("src/referenceGenes.list", "src/Ecoli");
+//        System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
+//        run("src/referenceGenes.list", "src/Ecoli");
+        int iteration = 4;
+        long[] durations = new long[iteration];
+        for (int i=0; i<iteration; i++) {
+            long start = System.currentTimeMillis();
+            new Sequential2ParallelStream().runParallelStream("referenceGenes.list", "Ecoli");
+            durations[i] = System.currentTimeMillis() - start;
+        }
+
+
+        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+            System.out.println(entry.getKey() + " " + entry.getValue());
+
+        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000);
         System.out.println(
                 "\n-------------------------------" +
                 "\nSmall progress is still progress." +
@@ -173,6 +233,4 @@ public class Sequential2ParallelStream
                 "\n-------------------------------");
     }
 
-    // TODO: Implement garbage collector
-    // Now: 8 threads opened, paralleled 3 for loops. 11/10 22.30
 }
