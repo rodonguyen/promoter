@@ -11,10 +11,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Sequential2Parallel
+public class Parallel
 {
     // Changed them to final
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
+//    private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     // https://www.baeldung.com/java-threadlocal
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
@@ -160,6 +161,8 @@ public class Sequential2Parallel
         for (Gene referenceGene : referenceGenes) {
             for (String filename : ListGenbankFiles(dir)) {
                 GenbankRecord record = Parse(filename);
+//                List<Gene> genes = record.genes;
+//                genes.parallelStream().forEach(gene -> {
                 for (Gene gene : record.genes) {
                     Future futureTask = executorService.submit(new RunnableTask(referenceGene, gene, record));
                     futureTasks.add(futureTask);
@@ -214,22 +217,20 @@ public class Sequential2Parallel
         // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
         //   2nd answer
         // https://www.javacodemonk.com/java-8-parallel-stream-custom-threadpool-48643a91
-//        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
+        // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
 
         // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         long startTime = System.currentTimeMillis();
 
         //  ************************* 1st For Loop *******************************
-         for (Gene referenceGene : referenceGenes)
-//        referenceGenes.parallelStream().forEach(referenceGene ->
-        {
+         for (Gene referenceGene : referenceGenes) {
             System.out.println(referenceGene.name);
             // ************************ 2nd For Loop ************************
             // Get Ecoli file in 'dir'
             List<String> filenames = ListGenbankFiles(dir);
-            filenames.parallelStream().forEach(filename -> {
-//            for (String filename : ListGenbankFiles(dir)) {
+//            filenames.parallelStream().forEach(filename -> {
+             for (String filename : ListGenbankFiles(dir)) {
                 System.out.println(filename);
                 GenbankRecord record = null;
                 try {
@@ -240,10 +241,10 @@ public class Sequential2Parallel
 
                 // ************************** 3rd For Loop *************************
 		        // For each gene in the genes record
-                 List<Gene> genes = record.genes;
+//                 List<Gene> genes = record.genes;
                  GenbankRecord finalRecord = record;
-//                 genes.parallelStream().forEach(gene -> {
-                      for (Gene gene : record.genes) {
+//                  genes.parallelStream().forEach(gene -> {
+                 for (Gene gene : record.genes) {
                      // Compare gene from reference with gene from records
                      // Homologous: determine if 2 genes serve the same purpose,
                      //      using SmithWatermanGototh algorithm (expensive)
@@ -259,9 +260,9 @@ public class Sequential2Parallel
 //                             System.out.println("Finish a gene prediction.");
                          }
                      }
-                 };
-            });
-        };
+                 }
+            }
+        }
 
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
@@ -271,11 +272,11 @@ public class Sequential2Parallel
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException, ExecutionException, InterruptedException {
-        int iteration = 3;
+        int iteration = 1;
         long[] durations = new long[iteration];
         for (int i=0; i<iteration; i++) {
             long start = System.currentTimeMillis();
-            new Sequential2Parallel().runExecutorService("referenceGenes.list", "Ecoli");
+            new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
 //            new Sequential2Parallel().runParallelStream("referenceGenes.list", "Ecoli");
 //            run("src/referenceGenes.list", "src/Ecoli");
             durations[i] = System.currentTimeMillis() - start;
