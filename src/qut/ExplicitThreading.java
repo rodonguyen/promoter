@@ -88,26 +88,14 @@ class Sequential_for_explicit_threading implements Runnable {
         return record;
     }
 
-    // TODO:
-    // - create 4 threads for 4 Ecoli
-    // - tag ID: 1 2 3 4
-    // - print the ID tagged with the dir
-    // - process and print <ID> - <promoter found>
-    // - parallelStream lib
-
     public void run() {
-        // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = null;
         try {
             referenceGenes = ParseReferenceGenes(referenceFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-//        // Get Ecoli file in 'dir'
-//        for (String filename : ListGenbankFiles(dir))
-//        {
-            System.out.println(ecoliFilename);
+        System.out.println(ecoliFilename);
 
         GenbankRecord record = null;
         try {
@@ -115,51 +103,29 @@ class Sequential_for_explicit_threading implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (Gene referenceGene : referenceGenes)
-            {
-		        System.out.println(referenceGene.name);
-
-		        // For each gene in the record
-                for (Gene gene : record.genes)
-                    // Compare gene from reference with gene from records
-                    // Homologous: determine if 2 genes serve the same purpose,
-                    //      using SmithWatermanGototh algorithm (expensive)
-                    if (Homologous(gene.sequence, referenceGene.sequence))
-                    {
-                        lock1.lock();
-                        // Extract upstreamRegion
-                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-	                    // Predict whether if it is a promoter
-                        Match prediction = PredictPromoter(upStreamRegion);
-                        if (prediction != null)
-                        {
-                            // Store result in 'concensus'
-                            consensus.get(referenceGene.name).addMatch(prediction);
-                            consensus.get("all").addMatch(prediction);
-                        }
-                        lock1.unlock();
+        for (Gene referenceGene : referenceGenes) {
+            System.out.println(referenceGene.name);
+            for (Gene gene : record.genes) {
+                if (Homologous(gene.sequence, referenceGene.sequence)) {
+                    lock1.lock();
+                    NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
+                    Match prediction = PredictPromoter(upStreamRegion);
+                    if (prediction != null) {
+                        consensus.get(referenceGene.name).addMatch(prediction);
+                        consensus.get("all").addMatch(prediction);
                     }
+                    lock1.unlock();
+                }
             }
-//        }
+        }
+
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
     }
-
-//    public static void main(String[] args) throws FileNotFoundException, IOException
-//    {
-////        run("src/referenceGenes.list", "src/Ecoli");
-//        //////////////////
-//
-//        // Get Ecoli filename in 'dir'
-//        for (String ecoliFilename : ListGenbankFiles("src/Ecoli")) {
-//            new Sequential(ecoliFilename).start();
-//        }
-//    }
 }
 
 class ExplicitThreading {
-    static ReentrantLock lock1 = new ReentrantLock();
 
     private static void ProcessDir(List<String> list, File dir)
     {
@@ -177,14 +143,14 @@ class ExplicitThreading {
         return list;
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         // Get Ecoli filename in 'dir'
-        List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
+        // List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
 
-        long startTime = System.nanoTime();
-
+        long startTime = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
         List<String> listGenBankFiles = ListGenbankFiles("src/Ecoli");
+        // Spawn a thread for each file
         for ( int i=0; i < listGenBankFiles.size(); i++) {
             String ecoliFilename = listGenBankFiles.get(i);
             Runnable task = new Sequential_for_explicit_threading(ecoliFilename, "src/referenceGenes.list");
@@ -194,21 +160,18 @@ class ExplicitThreading {
 
             threads.add(thread);
         }
-
 //        https://www.vogella.com/tutorials/JavaConcurrency/article.html
 //        int running = 0;
 //        do {
 //            running = 0;
-//            for (Thread thread : threads) {
+//            for (Thread thread : threads)
 //                if (thread.isAlive()) running++;
-//            }
 //            System.out.println("We have " + running + " running threads. ");
 //            Thread.sleep(1000);
 //        } while (running > 0);
-
         for (Thread thread : threads)  thread.join();
 
-        long timeElapsed = System.nanoTime() - startTime ;
+        long timeElapsed = System.currentTimeMillis() - startTime;
         System.out.println("Execution time: " + timeElapsed/1000000 + " ms");
     }
 }

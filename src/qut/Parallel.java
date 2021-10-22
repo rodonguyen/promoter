@@ -238,7 +238,6 @@ public class Parallel
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
                 // ************************** 3rd For Loop *************************
 		        // For each gene in the genes record
 //                 List<Gene> genes = record.genes;
@@ -272,16 +271,22 @@ public class Parallel
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException, ExecutionException, InterruptedException {
-        int iteration = 1;
+        int iteration = 1; // Number of repetitions
+        int choice = 0; // Choose base on the case below
+
         long[] durations = new long[iteration];
         for (int i=0; i<iteration; i++) {
-            long start = System.currentTimeMillis();
-            new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
-//            new Sequential2Parallel().runParallelStream("referenceGenes.list", "Ecoli");
-//            run("src/referenceGenes.list", "src/Ecoli");
-            durations[i] = System.currentTimeMillis() - start;
+            long startTime = System.currentTimeMillis();
+            switch (choice) {
+                case 0:
+                    new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
+                case 1:
+                    new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
+                case 2:
+                    run("src/referenceGenes.list", "src/Ecoli");
+            }
+            durations[i] = System.currentTimeMillis() - startTime;
         }
-
 
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
             System.out.println(entry.getKey() + " " + entry.getValue());
