@@ -8,20 +8,22 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 class Sequential_for_explicit_threading implements Runnable {
-    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
-    private static final Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
+//    private static final Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
+    private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static final byte[] complement = new byte['z'];
+    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
 
 
     // =================== New ====================
     private final String ecoliFilename;
-    private static String referenceFile;
+//    private static String referenceFile;
+    private final List<Gene> referenceGenes;
     static ReentrantLock lock1 = new ReentrantLock();
 
-    public Sequential_for_explicit_threading(String ecoliFilename, String referenceFile) {
+    public Sequential_for_explicit_threading(String ecoliFilename, List<Gene> referenceGenes) {
         this.ecoliFilename = ecoliFilename;
-        this.referenceFile = referenceFile;
+        this.referenceGenes = referenceGenes;
     }
     // ============================================
 
@@ -31,24 +33,6 @@ class Sequential_for_explicit_threading implements Runnable {
         complement['G'] = 'C'; complement['g'] = 'c';
         complement['T'] = 'A'; complement['t'] = 'a';
         complement['A'] = 'T'; complement['a'] = 't';
-    }
-
-    private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
-    {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));
-        List<Gene> referenceGenes = new ArrayList<Gene>();
-        while (true)
-        {
-            String name = reader.readLine();
-            if (name == null)
-                break;
-            String sequence = reader.readLine();
-            referenceGenes.add(new Gene(name, 0, 0, sequence));
-            consensus.put(name, new Sigma70Consensus());
-        }
-        consensus.put("all", new Sigma70Consensus());
-        reader.close();
-        return referenceGenes;
     }
 
     private static boolean Homologous(PeptideSequence A, PeptideSequence B)
@@ -76,7 +60,7 @@ class Sequential_for_explicit_threading implements Runnable {
 
     private static Match PredictPromoter(NucleotideSequence upStreamRegion)
     {
-        return BioPatterns.getBestMatch(sigma70_pattern, upStreamRegion.toString());
+        return BioPatterns.getBestMatch(sigma70_pattern.get(), upStreamRegion.toString());
     }
 
     private static GenbankRecord Parse(String file) throws IOException
@@ -89,12 +73,7 @@ class Sequential_for_explicit_threading implements Runnable {
     }
 
     public void run() {
-        List<Gene> referenceGenes = null;
-        try {
-            referenceGenes = ParseReferenceGenes(referenceFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         System.out.println(ecoliFilename);
 
         GenbankRecord record = null;
@@ -127,6 +106,7 @@ class Sequential_for_explicit_threading implements Runnable {
 
 class ExplicitThreading {
 
+    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
     private static void ProcessDir(List<String> list, File dir)
     {
         if (dir.exists())
@@ -142,10 +122,28 @@ class ExplicitThreading {
         ProcessDir(list, new File(dir));
         return list;
     }
+    private static List<Gene> ParseReferenceGenes(String referenceFile) throws IOException
+    {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));
+        List<Gene> referenceGenes = new ArrayList<Gene>();
+        while (true)
+        {
+            String name = reader.readLine();
+            if (name == null)
+                break;
+            String sequence = reader.readLine();
+            referenceGenes.add(new Gene(name, 0, 0, sequence));
+            consensus.put(name, new Sigma70Consensus());
+        }
+        consensus.put("all", new Sigma70Consensus());
+        reader.close();
+        return referenceGenes;
+    }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
         // Get Ecoli filename in 'dir'
         // List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
+        List<Gene> referenceGenes = ParseReferenceGenes("src/referenceGenes.list");
 
         long startTime = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
@@ -153,7 +151,7 @@ class ExplicitThreading {
         // Spawn a thread for each file
         for ( int i=0; i < listGenBankFiles.size(); i++) {
             String ecoliFilename = listGenBankFiles.get(i);
-            Runnable task = new Sequential_for_explicit_threading(ecoliFilename, "src/referenceGenes.list");
+            Runnable task = new Sequential_for_explicit_threading(ecoliFilename, referenceGenes);
             Thread thread = new Thread(task);
             thread.setName(String.valueOf(i));
             thread.start();
