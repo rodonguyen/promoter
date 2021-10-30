@@ -15,7 +15,9 @@ public class Parallel
 {
     // Changed them to final
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
-    private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
+//    private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
+    private static final ThreadLocal<Series> sigma70_pattern =
+            ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
 
@@ -114,7 +116,7 @@ public class Parallel
    /**
      * Run app by utilizing parallelStream method with an initial step of preparing data
      */
-    public void runParallelStream(String referenceFile, String dir) throws IOException {
+    public void runParallelStream(String referenceFile, String dir, int threadNum) throws IOException {
         // Preparing Data and store in List<TaskHandler>
         List<TaskHandler> taskHandlers = new ArrayList<>();
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
@@ -130,9 +132,6 @@ public class Parallel
 
         // Initialize Threads with ParallelStream() and compute
         // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
-        int threadNum = 6;  //Integer.toString(Runtime.getRuntime().availableProcessors())
-
-
         System.out.println("Now run on " + threadNum + " threads.");
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(threadNum));
         taskHandlers.parallelStream()
@@ -152,16 +151,13 @@ public class Parallel
    **==========================================================================================**
    ||                                  EXECUTOR SERVICE CODE                                   ||
    ||                                          below                                           ||*/
-
     /**
      * Run app by utilizing executorService method
      */
-    public void runExecutorService(String referenceFile, String dir) throws IOException, ExecutionException, InterruptedException {
+    public void runExecutorService(String referenceFile, String dir, int threadNum) throws IOException, ExecutionException, InterruptedException {
         // Set number of threads equal to number of threads available on machine
-        int threadNum = 8; // Runtime.getRuntime().availableProcessors();
-//        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        // ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newFixedThreadPool(threadNum);
         System.out.println("Run on " + threadNum + " threads.");
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         List<Future> futureTasks = new ArrayList<>();
@@ -220,9 +216,7 @@ public class Parallel
 
     public static void run(String referenceFile, String dir) throws IOException
     {
-
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
-        long startTime = System.currentTimeMillis();
 
         //  ************************* 1st For Loop *******************************
          for (Gene referenceGene : referenceGenes) {
@@ -258,26 +252,48 @@ public class Parallel
                  }
             }
         }
-
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
-
-        System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
-    public static void main(String[] args) throws IOException {
-        int iteration = 1; // Number of repetitions
-        int choice = 1;    // Choose base on the case below
+    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+        long startTime = System.currentTimeMillis();
+        new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
+        long durations = System.currentTimeMillis() - startTime;
+        System.out.println("Execution time is " + durations/1000 + " s");
+    }
+}
 
-        long[] durations = new long[11];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        int iteration = 1; // Number of repetitions
+//        int choice = 1;    // Choose base on the case below
+
 //        for (int i=1; i <= iteration; i++) {
 //            long startTime = System.currentTimeMillis();
 //            switch (choice) {
 //                case 1:
-//                    new Parallel().runParallelStream("referenceGenes.list", "src/Ecoli");
+//                    new Parallel().runParallelStream("referenceGenes.list", "src/Ecoli", 12);
 //                case 2:
-//                    new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli");
+//                    new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 12);
 //                case 3:
 //                    // Original Sequential program
 //                    run("src/referenceGenes.list", "src/Ecoli");
@@ -285,16 +301,8 @@ public class Parallel
 //            durations[i] = System.currentTimeMillis() - startTime;
 //        }
 
-        long startTime = System.currentTimeMillis();
-        new Parallel().runParallelStream("referenceGenes.list", "src/Ecoli");
-        durations[0] = System.currentTimeMillis() - startTime;
-        System.out.println("Execution time is " + durations[0]/1000 + " s");
-
-
 //        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
 //            System.out.println(entry.getKey() + entry.getValue());
 
-        System.out.println(consensus.entrySet());
+//        System.out.println(consensus.entrySet());
 //        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
-    }
-}

@@ -31,7 +31,8 @@ public class Sigma70Definition
     {
         PWM pwmM10 = getMinus10Pwm();
         PWM pwmM35 = getMinus35Pwm();
-        Gap spacer = new Gap(14, 20, new double[] {0.00,0.10,0.15,0.36,1.00,0.31,0.15,0.10,0.00});
+        Gap spacer = new Gap(14, 20,
+                new double[] {0.00,0.10,0.15,0.36,1.00,0.31,0.15,0.10,0.00});
 
         pwmM10.setImpact(1.0);
         pwmM35.setImpact(0.9086);  //set weight = fractional range difference        

@@ -9,9 +9,8 @@ import jaligner.matrix.Matrix;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class Sequential
+public class OptimizedSequential
 {
     private static HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
     private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
@@ -104,54 +103,29 @@ public class Sequential
 
     public static void run(String referenceFile, String dir) throws FileNotFoundException, IOException
     {
-        // Get referenceGene (which Ecoli genes will be compared to)
+        List<TaskHandler> taskHandlers = new ArrayList<>();
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
-
-        // Initial order
-        for (String filename : ListGenbankFiles(dir)) {
-            System.out.println(filename);
-            GenbankRecord record = Parse(filename);
-            for (Gene referenceGene : referenceGenes) {
-                System.out.println(referenceGene.name);
+        for (Gene referenceGene : referenceGenes) {
+            for (String filename : ListGenbankFiles(dir)) {
+                GenbankRecord record = Parse(filename);
                 for (Gene gene : record.genes) {
-                    if (Homologous(gene.sequence, referenceGene.sequence)) {
-                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-                        Match prediction = PredictPromoter(upStreamRegion);
-                        if (prediction != null) {
-                            consensus.get(referenceGene.name).addMatch(prediction);
-                            consensus.get("all").addMatch(prediction);
-                        }
-                    }
+                    taskHandlers.add(new TaskHandler(referenceGene, gene, record));
                 }
             }
         }
 
-        // Order changed
-//        for (Gene referenceGene : referenceGenes) {
-//            System.out.println(referenceGene.name);
-//            for (String filename : ListGenbankFiles(dir)) {
-//                System.out.println(filename);
-//                GenbankRecord record = null;
-//                try {
-//                    record = Parse(filename);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                for (Gene gene : record.genes) {
-//                    if (Homologous(gene.sequence, referenceGene.sequence)) {
-//                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-//                        Match prediction = PredictPromoter(upStreamRegion);
-//                        if (prediction != null) {
-//                            consensus.get(referenceGene.name).addMatch(prediction);
-//                            consensus.get("all").addMatch(prediction);
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        for (TaskHandler taskHandler : taskHandlers) {
+            if (Homologous(taskHandler.getGene().sequence, taskHandler.getReferenceGene().sequence)) {
+                NucleotideSequence upStreamRegion = GetUpstreamRegion(taskHandler.getRecord().nucleotides, taskHandler.getGene());
+                Match prediction = PredictPromoter(upStreamRegion);
+                if (prediction != null) {
+                    consensus.get(taskHandler.getReferenceGene().name).addMatch(prediction);
+                    consensus.get("all").addMatch(prediction);
+                }
+            }
+        }
 
-
-        // Print result from 'concensus'
+        // Print result from 'consensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
     }

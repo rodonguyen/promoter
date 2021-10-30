@@ -27,6 +27,9 @@ class CompareResult {
         defaultConsensus.put("folA", " Consensus: -35: T T G A C A gap: 17.5 -10: T A T A A T  (46 matches)");
     }
 
+    /**
+     * Compare Parallel consensus with consensus from analyzing default dataset
+     */
     @org.junit.jupiter.api.Test
     void parallel_defaultResult() throws IOException, ExecutionException, InterruptedException {
         Parallel.main(new String[0]);
@@ -35,10 +38,12 @@ class CompareResult {
         }
     }
 
+    /**
+     * Compare ExplicitThreading consensus with consensus from analyzing default dataset
+     */
     @org.junit.jupiter.api.Test
     void explicit_defaultResult() throws InterruptedException {
         ExplicitThreading.main(null);
-        HashMap<String, Sigma70Consensus> sequentialConsensus = Sequential.getConsensus();
         for (Map.Entry<String, Sigma70Consensus> entry : ExplicitThreading.getConsensus().entrySet()) {
             assertEquals(defaultConsensus.get(entry.getKey()), entry.getValue().toString());
         }
@@ -46,8 +51,9 @@ class CompareResult {
 
 
     /**
-     * This test should only be run when input data set has been changed
-     * as sequential takes much time to run
+     * Compare Parallel consensus with consensus from analyzing default dataset
+     * Note: This test should only be run when input data set has been changed
+     * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
     void parallel_sequentialResult() throws IOException, ExecutionException, InterruptedException {
@@ -60,8 +66,9 @@ class CompareResult {
     }
 
     /**
-     * This test should only be run when input data set has been changed
-     * as sequential takes much time to run
+     * Compare ExplicitThreading consensus with consensus from analyzing default dataset.
+     * Note: This test should only be run when input data set has been changed
+     * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
     void explicitThreading_sequentialResult() throws IOException, InterruptedException {
