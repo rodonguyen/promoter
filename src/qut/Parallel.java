@@ -129,9 +129,9 @@ public class Parallel
         System.out.println("parallelStream - Preparing data finished!\nComputing...\n");
 
         // Initialize Threads with ParallelStream() and compute
-//        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
-        int threadNum = 2;  //Integer.toString(Runtime.getRuntime().availableProcessors())
-        System.out.println("Run on " + threadNum + " threads.");
+        // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
+        int threadNum = 3;  //Integer.toString(Runtime.getRuntime().availableProcessors())
+        System.out.println("Now run on " + threadNum + " threads.");
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(threadNum));
         taskHandlers.parallelStream()
             .filter(task -> Homologous(task.getGene().sequence, task.getReferenceGene().sequence))
@@ -206,6 +206,7 @@ public class Parallel
             }
         }
     }
+
 /* ||                                                                                          ||
    ||                                                                                          ||
    **==========================================================================================**
@@ -285,8 +286,7 @@ public class Parallel
 
 
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
-            System.out.println(entry.getKey() + " " + entry.getValue());
-
-        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
+            System.out.println(entry.getKey() + "\n" + entry.getValue());
+//        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
     }
 }
