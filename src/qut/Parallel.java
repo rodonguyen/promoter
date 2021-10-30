@@ -15,13 +15,9 @@ public class Parallel
 {
     // Changed them to final
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
-//    private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
-    // https://www.baeldung.com/java-threadlocal
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
-    static ReentrantLock lock = new ReentrantLock();
-    // https://www.linkedin.com/learning/parallel-and-concurrent-programming-with-java-1/livelock-java-demo?u=57080313
 
     static
     {
@@ -29,6 +25,10 @@ public class Parallel
         complement['G'] = 'C'; complement['g'] = 'c';
         complement['T'] = 'A'; complement['t'] = 'a';
         complement['A'] = 'T'; complement['a'] = 't';
+    }
+
+    public static HashMap<String, Sigma70Consensus> getConsensus() {
+        return consensus;
     }
 
     private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
@@ -130,7 +130,7 @@ public class Parallel
 
         // Initialize Threads with ParallelStream() and compute
         // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
-        int threadNum = 3;  //Integer.toString(Runtime.getRuntime().availableProcessors())
+        int threadNum = 4;  //Integer.toString(Runtime.getRuntime().availableProcessors())
         System.out.println("Now run on " + threadNum + " threads.");
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(threadNum));
         taskHandlers.parallelStream()
@@ -287,6 +287,7 @@ public class Parallel
 
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
             System.out.println(entry.getKey() + "\n" + entry.getValue());
+
 //        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
     }
 }
