@@ -172,6 +172,6 @@ class ExplicitThreading {
         for (Thread thread : threads)  thread.join();
 
         long timeElapsed = System.currentTimeMillis() - startTime;
-        System.out.println("Execution time: " + timeElapsed/1000000 + " ms");
+        System.out.println("Execution time: " + timeElapsed/1000 + " ms");
     }
 }

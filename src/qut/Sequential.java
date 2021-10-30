@@ -153,12 +153,5 @@ public class Sequential
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException
-    {
-        run("src/referenceGenes.list", "src/Ecoli");
-        System.out.println("" +
-                "\n-------------------------------" +
-                "\nSmall progree is still progress" +
-                "\nYou will get there Rodo! 7" +
-                "\n-------------------------------");
-    }
+    {        run("src/referenceGenes.list", "src/Ecoli");    }
 }

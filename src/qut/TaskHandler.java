@@ -5,7 +5,6 @@ public class TaskHandler {
     private final Gene gene;
     private final GenbankRecord record;
 
-
     public TaskHandler(Gene referenceGene, Gene gene, GenbankRecord record) {
         this.referenceGene = referenceGene;
         this.gene = gene;
@@ -15,11 +14,9 @@ public class TaskHandler {
     public Gene getReferenceGene() {
         return referenceGene;
     }
-
     public Gene getGene() {
         return gene;
     }
-
     public GenbankRecord getRecord() {
         return record;
     }

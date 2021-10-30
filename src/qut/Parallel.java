@@ -103,7 +103,6 @@ public class Parallel
         return record;
     }
 
-
     public synchronized void addConsensus(String name, Match prediction) {
         consensus.get(name).addMatch(prediction);
         consensus.get("all").addMatch(prediction);
@@ -130,7 +129,10 @@ public class Parallel
         System.out.println("parallelStream - Preparing data finished!\nComputing...\n");
 
         // Initialize Threads with ParallelStream() and compute
-        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
+//        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
+        int threadNum = 2;  //Integer.toString(Runtime.getRuntime().availableProcessors())
+        System.out.println("Run on " + threadNum + " threads.");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(threadNum));
         taskHandlers.parallelStream()
             .filter(task -> Homologous(task.getGene().sequence, task.getReferenceGene().sequence))
             .forEach(task -> {
@@ -154,15 +156,17 @@ public class Parallel
      */
     public void runExecutorService(String referenceFile, String dir) throws IOException, ExecutionException, InterruptedException {
         // Set number of threads equal to number of threads available on machine
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        int threadNum = 8; // Runtime.getRuntime().availableProcessors();
+//        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        System.out.println("Run on " + threadNum + " threads.");
+
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         List<Future> futureTasks = new ArrayList<>();
 
         for (Gene referenceGene : referenceGenes) {
             for (String filename : ListGenbankFiles(dir)) {
                 GenbankRecord record = Parse(filename);
-//                List<Gene> genes = record.genes;
-//                genes.parallelStream().forEach(gene -> {
                 for (Gene gene : record.genes) {
                     Future futureTask = executorService.submit(new RunnableTask(referenceGene, gene, record));
                     futureTasks.add(futureTask);
@@ -191,7 +195,7 @@ public class Parallel
             this.gene = gene;
             this.record = record;
         }
-
+        @Override
         public void run() {
             if (Homologous(gene.sequence, referenceGene.sequence)) {
                 NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
@@ -210,24 +214,14 @@ public class Parallel
 
     public static void run(String referenceFile, String dir) throws IOException
     {
-        // Set fixed number of threads (thread pool)
-        // https://www.baeldung.com/java-8-parallel-streams-custom-threadpool
-        //   Avoid Thread pool being used by other components within the app
-        //   memory leak -> remember to shutdown
-        // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
-        //   2nd answer
-        // https://www.javacodemonk.com/java-8-parallel-stream-custom-threadpool-48643a91
-        // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
 
-        // Get referenceGene (which Ecoli genes will be compared to)
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         long startTime = System.currentTimeMillis();
 
         //  ************************* 1st For Loop *******************************
          for (Gene referenceGene : referenceGenes) {
             System.out.println(referenceGene.name);
-            // ************************ 2nd For Loop ************************
-            // Get Ecoli file in 'dir'
+            // *************************** 2nd For Loop ***************************
             List<String> filenames = ListGenbankFiles(dir);
 //            filenames.parallelStream().forEach(filename -> {
              for (String filename : ListGenbankFiles(dir)) {
@@ -239,14 +233,10 @@ public class Parallel
                     e.printStackTrace();
                 }
                 // ************************** 3rd For Loop *************************
-		        // For each gene in the genes record
 //                 List<Gene> genes = record.genes;
                  GenbankRecord finalRecord = record;
 //                  genes.parallelStream().forEach(gene -> {
                  for (Gene gene : record.genes) {
-                     // Compare gene from reference with gene from records
-                     // Homologous: determine if 2 genes serve the same purpose,
-                     //      using SmithWatermanGototh algorithm (expensive)
                      if (Homologous(gene.sequence, referenceGene.sequence)) {
                          // Extract upstreamRegion
                          NucleotideSequence upStreamRegion = GetUpstreamRegion(finalRecord.nucleotides, gene);
@@ -256,7 +246,6 @@ public class Parallel
                              // Store result in 'concensus'
                              consensus.get(referenceGene.name).addMatch(prediction);
                              consensus.get("all").addMatch(prediction);
-//                             System.out.println("Finish a gene prediction.");
                          }
                      }
                  }
@@ -272,31 +261,32 @@ public class Parallel
 
     public static void main(String[] args) throws FileNotFoundException, IOException, ExecutionException, InterruptedException {
         int iteration = 1; // Number of repetitions
-        int choice = 0; // Choose base on the case below
+        int choice = 1;    // Choose base on the case below
 
-        long[] durations = new long[iteration];
-        for (int i=0; i<iteration; i++) {
-            long startTime = System.currentTimeMillis();
-            switch (choice) {
-                case 0:
-                    new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
-                case 1:
-                    new Parallel().runParallelStream("referenceGenes.list", "Ecoli");
-                case 2:
-                    run("src/referenceGenes.list", "src/Ecoli");
-            }
-            durations[i] = System.currentTimeMillis() - startTime;
-        }
+        long[] durations = new long[11];
+//        for (int i=1; i <= iteration; i++) {
+//            long startTime = System.currentTimeMillis();
+//            switch (choice) {
+//                case 1:
+//                    new Parallel().runParallelStream("referenceGenes.list", "src/Ecoli");
+//                case 2:
+//                    new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli");
+//                case 3:
+//                    // Original Sequential program
+//                    run("src/referenceGenes.list", "src/Ecoli");
+//            }
+//            durations[i] = System.currentTimeMillis() - startTime;
+//        }
+
+        long startTime = System.currentTimeMillis();
+        new Parallel().runParallelStream("referenceGenes.list", "src/Ecoli");
+        durations[0] = System.currentTimeMillis() - startTime;
+        System.out.println("Execution time is " + durations[0]/1000 + " s");
+
 
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
             System.out.println(entry.getKey() + " " + entry.getValue());
 
         System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
-        System.out.println(
-                "\n-------------------------------" +
-                "\nSmall progress is still progress." +
-                "\nYou will get there Rodo! Get the 7" +
-                "\n-------------------------------");
     }
-
 }
