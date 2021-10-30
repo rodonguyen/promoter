@@ -26,6 +26,10 @@ public class Sequential
         complement['A'] = 'T'; complement['a'] = 't';
     }
 
+    public static HashMap<String, Sigma70Consensus> getConsensus() {
+        return consensus;
+    }
+
     private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
     {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));

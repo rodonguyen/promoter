@@ -23,6 +23,7 @@ class Sequential_for_explicit_threading implements Runnable {
         this.ecoliFilename = ecoliFilename;
         this.referenceFile = referenceFile;
     }
+
     // ============================================
 
     static
@@ -126,6 +127,7 @@ class Sequential_for_explicit_threading implements Runnable {
 }
 
 class ExplicitThreading {
+    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
 
     private static void ProcessDir(List<String> list, File dir)
     {
@@ -160,6 +162,23 @@ class ExplicitThreading {
 
             threads.add(thread);
         }
+        for (Thread thread : threads)  thread.join();
+
+        long timeElapsed = System.currentTimeMillis() - startTime;
+        System.out.println("Execution time: " + timeElapsed/1000 + " ms");
+    }
+
+    public static HashMap<String, Sigma70Consensus> getConsensus() {
+        return consensus;
+    }
+}
+
+
+
+
+
+
+
 //        https://www.vogella.com/tutorials/JavaConcurrency/article.html
 //        int running = 0;
 //        do {
@@ -169,9 +188,3 @@ class ExplicitThreading {
 //            System.out.println("We have " + running + " running threads. ");
 //            Thread.sleep(1000);
 //        } while (running > 0);
-        for (Thread thread : threads)  thread.join();
-
-        long timeElapsed = System.currentTimeMillis() - startTime;
-        System.out.println("Execution time: " + timeElapsed/1000 + " ms");
-    }
-}

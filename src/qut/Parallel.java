@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Parallel
 {
     // Changed them to final
-    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<String, Sigma70Consensus>();
+    private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
     private static final ThreadLocal<Series> sigma70_pattern =  ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
@@ -130,7 +130,9 @@ public class Parallel
 
         // Initialize Threads with ParallelStream() and compute
         // System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Runtime.getRuntime().availableProcessors()));
-        int threadNum = 4;  //Integer.toString(Runtime.getRuntime().availableProcessors())
+        int threadNum = 6;  //Integer.toString(Runtime.getRuntime().availableProcessors())
+
+
         System.out.println("Now run on " + threadNum + " threads.");
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(threadNum));
         taskHandlers.parallelStream()
@@ -158,9 +160,9 @@ public class Parallel
         // Set number of threads equal to number of threads available on machine
         int threadNum = 8; // Runtime.getRuntime().availableProcessors();
 //        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         System.out.println("Run on " + threadNum + " threads.");
-
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
         List<Future> futureTasks = new ArrayList<>();
 
@@ -168,7 +170,10 @@ public class Parallel
             for (String filename : ListGenbankFiles(dir)) {
                 GenbankRecord record = Parse(filename);
                 for (Gene gene : record.genes) {
-                    Future futureTask = executorService.submit(new RunnableTask(referenceGene, gene, record));
+                    Future futureTask = executorService.submit(
+                            new RunnableTask(
+                                    referenceGene,
+                                    gene, record));
                     futureTasks.add(futureTask);
                 }
             }
@@ -240,7 +245,8 @@ public class Parallel
                  for (Gene gene : record.genes) {
                      if (Homologous(gene.sequence, referenceGene.sequence)) {
                          // Extract upstreamRegion
-                         NucleotideSequence upStreamRegion = GetUpstreamRegion(finalRecord.nucleotides, gene);
+                         NucleotideSequence upStreamRegion = GetUpstreamRegion(
+                                 finalRecord.nucleotides, gene);
                          // Predict whether if it is a promoter
                          Match prediction = PredictPromoter(upStreamRegion);
                          if (prediction != null) {
@@ -260,7 +266,7 @@ public class Parallel
         System.out.println("Execution time: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, ExecutionException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         int iteration = 1; // Number of repetitions
         int choice = 1;    // Choose base on the case below
 
@@ -285,9 +291,10 @@ public class Parallel
         System.out.println("Execution time is " + durations[0]/1000 + " s");
 
 
-        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
-            System.out.println(entry.getKey() + "\n" + entry.getValue());
+//        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+//            System.out.println(entry.getKey() + entry.getValue());
 
+        System.out.println(consensus.entrySet());
 //        System.out.println("Average execution time is " + Arrays.stream(durations).sum()/iteration/1000 + " s");
     }
 }
