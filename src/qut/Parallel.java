@@ -112,19 +112,15 @@ public class Parallel {
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism",Integer.toString(threadNum));
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
 
-//        referenceGenes.parallelStream().forEach(referenceGene -> {
         for( Gene referenceGene :referenceGenes) {
             System.out.println(referenceGene.name);
-            List<String> filenames = ListGenbankFiles(dir);
             for (String filename : ListGenbankFiles(dir)) {
-    //            filenames.parallelStream().forEach(filename -> {
                 System.out.println(filename);
                 GenbankRecord record = null;
                 try { record = Parse(filename);  }
                 catch (IOException e) { e.printStackTrace();  }
                 List<Gene> genes = record.genes;
                 GenbankRecord finalRecord = record;
-    //                for (Gene gene : record.genes) {
                 genes.parallelStream().forEach(gene -> {
                     if (Homologous(gene.sequence, referenceGene.sequence)) {
                         NucleotideSequence upStreamRegion = GetUpstreamRegion(
@@ -291,9 +287,11 @@ public class Parallel {
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         long startTime = System.currentTimeMillis();
-//        new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
-        new Parallel().runParallelStream3rd("referenceGenes.list", "src/Ecoli", 12);
+//        new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 12);
+        new Parallel().runParallelStream3rd("referenceGenes.list", "src/Ecoli", 16);
 //        run("referenceGenes.list", "src/Ecoli", 12);
+//        new Parallel().runParallelStreamWithPrep("referenceGenes.list", "src/Ecoli", 16);
+
         long durations = System.currentTimeMillis() - startTime;
         System.out.println("Execution time is " + durations/1000 + " s");
     }
