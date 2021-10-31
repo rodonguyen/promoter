@@ -31,7 +31,7 @@ class CompareResult {
      * Compare Parallel consensus with consensus from analyzing default dataset
      */
     @org.junit.jupiter.api.Test
-    void parallel_defaultResult() throws IOException, ExecutionException, InterruptedException {
+    void parallel_n_defaultResult() throws IOException, ExecutionException, InterruptedException {
         Parallel.main(new String[0]);
         for (Map.Entry<String, Sigma70Consensus> entry : Parallel.getConsensus().entrySet()) {
             assertEquals(defaultConsensus.get(entry.getKey()), entry.getValue().toString());
@@ -42,7 +42,7 @@ class CompareResult {
      * Compare ExplicitThreading consensus with consensus from analyzing default dataset
      */
     @org.junit.jupiter.api.Test
-    void explicit_defaultResult() throws InterruptedException {
+    void explicit_n_defaultResult() throws InterruptedException {
         ExplicitThreading.main(null);
         for (Map.Entry<String, Sigma70Consensus> entry : ExplicitThreading.getConsensus().entrySet()) {
             assertEquals(defaultConsensus.get(entry.getKey()), entry.getValue().toString());
@@ -56,7 +56,7 @@ class CompareResult {
      * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
-    void parallel_sequentialResult() throws IOException, ExecutionException, InterruptedException {
+    void parallel_n_sequentialResult() throws IOException, ExecutionException, InterruptedException {
         Parallel.main(null);
         Sequential.main(null);
         HashMap<String, Sigma70Consensus> sequentialConsensus = Sequential.getConsensus();
@@ -71,7 +71,7 @@ class CompareResult {
      * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
-    void explicitThreading_sequentialResult() throws IOException, InterruptedException {
+    void explicitThreading_n_sequentialResult() throws IOException, InterruptedException {
         ExplicitThreading.main(null);
         Sequential.main(null);
         HashMap<String, Sigma70Consensus> sequentialConsensus = Sequential.getConsensus();
@@ -80,9 +80,6 @@ class CompareResult {
         }
     }
 }
-
-
-
 
 
 //            System.out.println("\ndefault: " + defaultConsensus.get(entry.getKey()));

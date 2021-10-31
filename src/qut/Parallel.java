@@ -11,34 +11,34 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Parallel
-{
+public class Parallel {
     // Changed them to final
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
-//    private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
+    //    private static Series sigma70_pattern = Sigma70Definition.getSeriesAll_Unanchored(0.7);
     private static final ThreadLocal<Series> sigma70_pattern =
             ThreadLocal.withInitial(() -> Sigma70Definition.getSeriesAll_Unanchored(0.7));
     private static final Matrix BLOSUM_62 = BLOSUM62.Load();
     private static byte[] complement = new byte['z'];
 
-    static
-    {
-        complement['C'] = 'G'; complement['c'] = 'g';
-        complement['G'] = 'C'; complement['g'] = 'c';
-        complement['T'] = 'A'; complement['t'] = 'a';
-        complement['A'] = 'T'; complement['a'] = 't';
+    static {
+        complement['C'] = 'G';
+        complement['c'] = 'g';
+        complement['G'] = 'C';
+        complement['g'] = 'c';
+        complement['T'] = 'A';
+        complement['t'] = 'a';
+        complement['A'] = 'T';
+        complement['a'] = 't';
     }
 
     public static HashMap<String, Sigma70Consensus> getConsensus() {
         return consensus;
     }
 
-    private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException
-    {
+    private static List<Gene> ParseReferenceGenes(String referenceFile) throws FileNotFoundException, IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(referenceFile)));
         List<Gene> referenceGenes = new ArrayList<Gene>();
-        while (true)
-        {
+        while (true) {
             String name = reader.readLine();
             if (name == null)
                 break;
@@ -51,36 +51,31 @@ public class Parallel
         return referenceGenes;
     }
 
-    private static boolean Homologous(PeptideSequence A, PeptideSequence B)
-    {
+    private static boolean Homologous(PeptideSequence A, PeptideSequence B) {
         return SmithWatermanGotoh.align(new Sequence(A.toString()), new Sequence(B.toString()), BLOSUM_62, 10f, 0.5f).calculateScore() >= 60;
     }
 
-    private static NucleotideSequence GetUpstreamRegion(NucleotideSequence dna, Gene gene)
-    {
+    private static NucleotideSequence GetUpstreamRegion(NucleotideSequence dna, Gene gene) {
         int upStreamDistance = 250;
         if (gene.location < upStreamDistance)
-           upStreamDistance = gene.location-1;
+            upStreamDistance = gene.location - 1;
 
         if (gene.strand == 1)
-            return new NucleotideSequence(Arrays.copyOfRange(dna.bytes, gene.location-upStreamDistance-1, gene.location-1));
-        else
-        {
+            return new NucleotideSequence(Arrays.copyOfRange(dna.bytes, gene.location - upStreamDistance - 1, gene.location - 1));
+        else {
             byte[] result = new byte[upStreamDistance];
             int reverseStart = dna.bytes.length - gene.location + upStreamDistance;
-            for (int i=0; i<upStreamDistance; i++)
-                result[i] = complement[dna.bytes[reverseStart-i]];
+            for (int i = 0; i < upStreamDistance; i++)
+                result[i] = complement[dna.bytes[reverseStart - i]];
             return new NucleotideSequence(result);
         }
     }
 
-    private static Match PredictPromoter(NucleotideSequence upStreamRegion)
-    {
+    private static Match PredictPromoter(NucleotideSequence upStreamRegion) {
         return BioPatterns.getBestMatch(sigma70_pattern.get(), upStreamRegion.toString());
     }
 
-    private static void ProcessDir(List<String> list, File dir)
-    {
+    private static void ProcessDir(List<String> list, File dir) {
         if (dir.exists())
             for (File file : dir.listFiles())
                 if (file.isDirectory())
@@ -89,15 +84,13 @@ public class Parallel
                     list.add(file.getPath());
     }
 
-    private static List<String> ListGenbankFiles(String dir)
-    {
+    private static List<String> ListGenbankFiles(String dir) {
         List<String> list = new ArrayList<String>();
         ProcessDir(list, new File(dir));
         return list;
     }
 
-    private static GenbankRecord Parse(String file) throws IOException
-    {
+    private static GenbankRecord Parse(String file) throws IOException {
         GenbankRecord record = new GenbankRecord();
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
         record.Parse(reader);
@@ -110,13 +103,52 @@ public class Parallel
         consensus.get("all").addMatch(prediction);
     }
  /* **==========================================================================================**
-    ||                                   PARALLEL STREAM CODE                                   ||
+    ||                            PARALLEL STREAM (3rd For Loop) CODE                           ||
+    ||                                          below                                           || */
+
+    public void runParallelStream3rd(String referenceFile, String dir, int threadNum) throws IOException
+    {
+        System.out.println("Now run on "+threadNum +" threads.");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism",Integer.toString(threadNum));
+        List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
+
+//        referenceGenes.parallelStream().forEach(referenceGene -> {
+        for( Gene referenceGene :referenceGenes) {
+            System.out.println(referenceGene.name);
+            List<String> filenames = ListGenbankFiles(dir);
+            for (String filename : ListGenbankFiles(dir)) {
+    //            filenames.parallelStream().forEach(filename -> {
+                System.out.println(filename);
+                GenbankRecord record = null;
+                try { record = Parse(filename);  }
+                catch (IOException e) { e.printStackTrace();  }
+                List<Gene> genes = record.genes;
+                GenbankRecord finalRecord = record;
+    //                for (Gene gene : record.genes) {
+                genes.parallelStream().forEach(gene -> {
+                    if (Homologous(gene.sequence, referenceGene.sequence)) {
+                        NucleotideSequence upStreamRegion = GetUpstreamRegion(
+                                finalRecord.nucleotides, gene);
+                        Match prediction = PredictPromoter(upStreamRegion);
+                        if (prediction != null)
+                            addConsensus(referenceGene.name, prediction);
+                    }
+                });
+            }
+        }
+
+        for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
+            System.out.println(entry.getKey() + " " + entry.getValue());
+    }
+
+ /* **==========================================================================================**
+    ||                         PARALLEL STREAM (with pre-process) CODE                          ||
     ||                                          below                                           || */
 
    /**
      * Run app by utilizing parallelStream method with an initial step of preparing data
      */
-    public void runParallelStream(String referenceFile, String dir, int threadNum) throws IOException {
+    public void runParallelStreamWithPrep(String referenceFile, String dir, int threadNum) throws IOException {
         // Preparing Data and store in List<TaskHandler>
         List<TaskHandler> taskHandlers = new ArrayList<>();
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
@@ -211,20 +243,21 @@ public class Parallel
 /* ||                                                                                          ||
    ||                                                                                          ||
    **==========================================================================================**
-   ||                                  SEQUENTIAL CODE                                         ||
+   ||                       SEQUENTIAL CODE with changed For loops order                       ||
    ||                                       below                                              ||*/
 
-    public static void run(String referenceFile, String dir) throws IOException
+    public static void run(String referenceFile, String dir, int threadNum) throws IOException
     {
         List<Gene> referenceGenes = ParseReferenceGenes(referenceFile);
 
-        //  ************************* 1st For Loop *******************************
-         for (Gene referenceGene : referenceGenes) {
+         //  ************************* 1st For Loop *******************************
+         referenceGenes.parallelStream().forEach(referenceGene -> {
+//         for (Gene referenceGene : referenceGenes) {
             System.out.println(referenceGene.name);
             // *************************** 2nd For Loop ***************************
             List<String> filenames = ListGenbankFiles(dir);
-//            filenames.parallelStream().forEach(filename -> {
-             for (String filename : ListGenbankFiles(dir)) {
+            filenames.parallelStream().forEach(filename -> {
+//             for (String filename : ListGenbankFiles(dir)) {
                 System.out.println(filename);
                 GenbankRecord record = null;
                 try {
@@ -233,10 +266,10 @@ public class Parallel
                     e.printStackTrace();
                 }
                 // ************************** 3rd For Loop *************************
-//                 List<Gene> genes = record.genes;
+                 List<Gene> genes = record.genes;
                  GenbankRecord finalRecord = record;
-//                  genes.parallelStream().forEach(gene -> {
-                 for (Gene gene : record.genes) {
+                  genes.parallelStream().forEach(gene -> {
+//                 for (Gene gene : record.genes) {
                      if (Homologous(gene.sequence, referenceGene.sequence)) {
                          // Extract upstreamRegion
                          NucleotideSequence upStreamRegion = GetUpstreamRegion(
@@ -249,17 +282,18 @@ public class Parallel
                              consensus.get("all").addMatch(prediction);
                          }
                      }
-                 }
-            }
-        }
-        // Print result from 'concensus'
+                 });
+            });
+        });
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
            System.out.println(entry.getKey() + " " + entry.getValue());
     }
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         long startTime = System.currentTimeMillis();
-        new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
+//        new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
+        new Parallel().runParallelStream3rd("referenceGenes.list", "src/Ecoli", 12);
+//        run("referenceGenes.list", "src/Ecoli", 12);
         long durations = System.currentTimeMillis() - startTime;
         System.out.println("Execution time is " + durations/1000 + " s");
     }
