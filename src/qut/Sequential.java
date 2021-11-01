@@ -115,7 +115,8 @@ public class Sequential
                 System.out.println(referenceGene.name);
                 for (Gene gene : record.genes) {
                     if (Homologous(gene.sequence, referenceGene.sequence)) {
-                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
+                        NucleotideSequence upStreamRegion = GetUpstreamRegion(
+                                record.nucleotides, gene);
                         Match prediction = PredictPromoter(upStreamRegion);
                         if (prediction != null) {
                             consensus.get(referenceGene.name).addMatch(prediction);
@@ -125,31 +126,6 @@ public class Sequential
                 }
             }
         }
-
-        // Order changed
-//        for (Gene referenceGene : referenceGenes) {
-//            System.out.println(referenceGene.name);
-//            for (String filename : ListGenbankFiles(dir)) {
-//                System.out.println(filename);
-//                GenbankRecord record = null;
-//                try {
-//                    record = Parse(filename);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                for (Gene gene : record.genes) {
-//                    if (Homologous(gene.sequence, referenceGene.sequence)) {
-//                        NucleotideSequence upStreamRegion = GetUpstreamRegion(record.nucleotides, gene);
-//                        Match prediction = PredictPromoter(upStreamRegion);
-//                        if (prediction != null) {
-//                            consensus.get(referenceGene.name).addMatch(prediction);
-//                            consensus.get("all").addMatch(prediction);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
 
         // Print result from 'concensus'
         for (Map.Entry<String, Sigma70Consensus> entry : consensus.entrySet())
@@ -164,3 +140,11 @@ public class Sequential
         System.out.println("Execution time is " + durations/1000 + " s");
     }
 }
+
+
+
+
+
+
+
+

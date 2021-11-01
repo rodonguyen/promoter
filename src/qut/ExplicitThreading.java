@@ -23,7 +23,6 @@ class Sequential_for_explicit_threading implements Runnable {
         this.ecoliFilename = ecoliFilename;
         this.referenceFile = referenceFile;
     }
-
     // ============================================
 
     static
@@ -128,7 +127,6 @@ class Sequential_for_explicit_threading implements Runnable {
 
 class ExplicitThreading {
     private static final HashMap<String, Sigma70Consensus> consensus = new HashMap<>();
-
     private static void ProcessDir(List<String> list, File dir)
     {
         if (dir.exists())
@@ -144,10 +142,7 @@ class ExplicitThreading {
         ProcessDir(list, new File(dir));
         return list;
     }
-
     public static void main(String[] args) throws InterruptedException {
-        // Get Ecoli filename in 'dir'
-        // List<String> ecoliFilenames = ListGenbankFiles("src/Ecoli");
 
         long startTime = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
@@ -155,11 +150,11 @@ class ExplicitThreading {
         // Spawn a thread for each file
         for ( int i=0; i < listGenBankFiles.size(); i++) {
             String ecoliFilename = listGenBankFiles.get(i);
-            Runnable task = new Sequential_for_explicit_threading(ecoliFilename, "src/referenceGenes.list");
+            Runnable task = new Sequential_for_explicit_threading(
+                    ecoliFilename, "src/referenceGenes.list");
             Thread thread = new Thread(task);
             thread.setName(String.valueOf(i));
             thread.start();
-
             threads.add(thread);
         }
         for (Thread thread : threads)  thread.join();

@@ -56,7 +56,7 @@ class CompareResult {
      * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
-    void parallel_n_sequentialResult() throws IOException, ExecutionException, InterruptedException {
+    void parallel_n_sequential() throws IOException, ExecutionException, InterruptedException {
         Parallel.main(null);
         Sequential.main(null);
         HashMap<String, Sigma70Consensus> sequentialConsensus = Sequential.getConsensus();
@@ -71,7 +71,7 @@ class CompareResult {
      * as Sequential takes much time to run
      */
     @org.junit.jupiter.api.Test
-    void explicitThreading_n_sequentialResult() throws IOException, InterruptedException {
+    void explicitThreading_n_sequential() throws IOException, InterruptedException {
         ExplicitThreading.main(null);
         Sequential.main(null);
         HashMap<String, Sigma70Consensus> sequentialConsensus = Sequential.getConsensus();
