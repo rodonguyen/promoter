@@ -28,7 +28,7 @@ class CompareResult {
     }
 
     /**
-     * Compare Parallel consensus with consensus from analyzing default dataset
+     * Compare a Parallel technique’s  consensus with consensus from analyzing default dataset
      */
     @org.junit.jupiter.api.Test
     void parallel_n_defaultResult() throws IOException, ExecutionException, InterruptedException {
@@ -39,7 +39,7 @@ class CompareResult {
     }
 
     /**
-     * Compare ExplicitThreading consensus with consensus from analyzing default dataset
+     * Compare a Parallel technique’s consensus with consensus from analyzing default dataset
      */
     @org.junit.jupiter.api.Test
     void explicit_n_defaultResult() throws InterruptedException {
@@ -51,7 +51,7 @@ class CompareResult {
 
 
     /**
-     * Compare Parallel consensus with consensus from analyzing default dataset
+     * Compare a Parallel technique’s consensus with Sequential code’s
      * Note: This test should only be run when input data set has been changed
      * as Sequential takes much time to run
      */
@@ -66,7 +66,7 @@ class CompareResult {
     }
 
     /**
-     * Compare ExplicitThreading consensus with consensus from analyzing default dataset.
+     * Compare a Parallel technique’s consensus with Sequential code’s
      * Note: This test should only be run when input data set has been changed
      * as Sequential takes much time to run
      */

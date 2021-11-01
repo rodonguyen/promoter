@@ -1,55 +1,14 @@
-# parallel-project
- CAB401
+## parallel-project-CAB401
+### Instructions to run app with each technique  
+Step 1: Open Zip file and open the folder with IntelliJ  
+Step 2: Open src > qut  
+Step 3: Now we are in qut directory:  
+- To use Sequential code, run Sequential.java
+- To use Explicit Threading Technique, run ExplicitThreading class in ExplicitThreading.java
+- To use Parallel Stream 3rd For loop / Parallel Stream with pre-processing / Executor Service, change ‘choice’ value with number 1 / 2 / 3 accordingly at line 271 (and threadNum parameter to run on [threadNum] threads) in Parallel.java and run main function.   
 
-
-
-## Results
-src\Ecoli\Escherichia_coli_BW2952_uid59391\NC_012759.gbk  
-nhaA
-yaaY
-carA
-caiF
-caiD
-fixA
-fixB
-folA
-
-src\Ecoli\Escherichia_coli_K_12_substr__DH10B_uid58979\NC_010473.gbk  
-nhaA
-yaaY
-carA
-caiF
-caiD
-fixA
-fixB
-folA
-
-src\Ecoli\Escherichia_coli_K_12_substr__MG1655_uid57779\NC_000913.gbk
-nhaA
-yaaY
-carA
-caiF
-caiD
-fixA
-fixB
-folA
-
-src\Ecoli\Escherichia_coli_K_12_substr__W3110_uid161931\NC_007779.gbk
-nhaA
-yaaY
-carA
-caiF
-caiD
-fixA
-fixB
-folA
-
-all  Consensus: -35: T T G A C A gap: 17.6 -10: T A T A A T  (5430 matches)  
-fixB  Consensus: -35: T T G A C A gap: 17.7 -10: T A T A A T  (965 matches)  
-carA  Consensus: -35: T T G A C A gap: 17.7 -10: T A T A A T  (1079 matches)  
-fixA  Consensus: -35: T T G A C A gap: 17.6 -10: T A T A A T  (896 matches)  
-caiF  Consensus: -35: T T C A A A gap: 18.0 -10: T A T A A T  (11 matches)  
-caiD  Consensus: -35: T T G A C A gap: 17.6 -10: T A T A A T  (550 matches)  
-yaaY  Consensus: -35: T T G T C G gap: 18.0 -10: T A T A C T  (4 matches)  
-nhaA  Consensus: -35: T T G A C A gap: 17.6 -10: T A T A A T  (1879 matches)  
-folA  Consensus: -35: T T G A C A gap: 17.5 -10: T A T A A T  (46 matches)  
+Step 4: To test the result, you similarly change ‘choice’ value and run the test you want. Tests provided are:
+- Compare a Parallel technique’s consensus with consensus from analyzing default dataset
+- Compare ExplicitThreading technique’s consensus with consensus from analyzing default dataset
+- Compare a Parallel technique’s consensus with Sequential code’s
+- Compare a Parallel technique’s consensus with Sequential code’s 

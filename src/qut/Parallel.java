@@ -269,18 +269,16 @@ public class Parallel {
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         long startTime = System.currentTimeMillis();
         int choice = 2;    // Choose base on the case below
-
-            switch (choice) {
-                case 1:
-                    new Parallel().runParallelStream3rd("referenceGenes.list", "src/Ecoli", 8);
-                case 2:
-                    new Parallel().runParallelStreamWithPrep("referenceGenes.list", "src/Ecoli", 8);
-                case 3:
-                    new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
-                case 4:
-                    run("src/referenceGenes.list", "src/Ecoli");
-            }
-
+        switch (choice) {
+            case 1:
+                new Parallel().runParallelStream3rd("referenceGenes.list", "src/Ecoli", 8);
+            case 2:
+                new Parallel().runParallelStreamWithPrep("referenceGenes.list", "src/Ecoli", 8);
+            case 3:
+                new Parallel().runExecutorService("referenceGenes.list", "src/Ecoli", 8);
+            case 4:
+                run("src/referenceGenes.list", "src/Ecoli");
+        }
         long durations = System.currentTimeMillis() - startTime;
         System.out.println("Execution time is " + durations/1000 + " s");
     }
