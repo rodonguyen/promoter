@@ -1,4 +1,9 @@
 ## parallel-project-CAB401
+
+<span style="color:red">**IMPORTANT: Don't copy exactly as you may be subject to academic misconduct.** Please modify the variables, delete comments, add/remove lines, etc. before submitting yours.</span>
+<hr/> 
+<br/>  
+
 ### Instructions to run app with each technique  
 Step 1: Open Zip file and open the folder with IntelliJ  
 Step 2: Open src > qut  
