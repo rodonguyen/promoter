@@ -1,8 +1,10 @@
 ## parallel-project-CAB401
 
-<span style="color:red">**IMPORTANT: Don't copy exactly as you may be subject to academic misconduct.** Please modify the variables, delete comments, add/remove lines, etc. before submitting yours.</span>
-<hr/> 
-<br/>  
+<span style="color:red">**IMPORTANT: Don't copy exactly as you may be subject to academic misconduct.** Please modify the variables, re-paraphrase, delete comments, add/remove lines, etc. before submitting yours.</span>
+To write a more comprehensive report, look through all the materials just like you are revising for exam so that you can remind yourself of the areas you may forget!  
+I achieved 50/50 with this report.  
+<hr/>
+<br/>
 
 ### Instructions to run app with each technique  
 Step 1: Open Zip file and open the folder with IntelliJ  
