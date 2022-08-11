@@ -1,14 +1,14 @@
 ## Promoter
-### Parallelization Project CAB401
+#### Parallelization Project CAB401
 
-<hr/>
 
 ## My Speedup Graph
 
 <center>
 <figure><img src="public/speedup_graph.png" alt="Figure: Speedup achieved in this project" style="width:600px"><figcaption align="center"><br>Figure: Speedup achieved in this project</figcaption></figure>
 </center>
-<hr/>
+
+</br>
 
 ## Instructions to run app with each technique  
 Step 1: Open Zip file and open the folder with IntelliJ  
