@@ -1,15 +1,13 @@
-# Promoter
-## parallel-project-CAB401
+## Promoter
+### Parallelization Project CAB401
+
+<hr/>
 
 ## My Speedup Graph
 
 <center>
 <figure><img src="public/speedup_graph.png" alt="Figure: Speedup achieved in this project" style="width:600px"><figcaption align="center"><br>Figure: Speedup achieved in this project</figcaption></figure>
 </center>
-
-<span style="color:red">**IMPORTANT: Don't copy exactly as you will be subject to academic misconduct.** Please modify the variables, re-paraphrase, delete comments, add/remove lines, etc. before submitting yours.</span>
-To write a more comprehensive report, look through all the materials just like you are revising for exam so that you can remind yourself of the areas you may forget!  
-I achieved 50/50 with this report.  
 <hr/>
 
 ## Instructions to run app with each technique  
@@ -25,3 +23,9 @@ Step 4: To test the result, you similarly uncomment the 1 method you want to run
 - Compare ExplicitThreading technique’s consensus with consensus from analyzing default dataset
 - Compare a Parallel technique’s consensus with Sequential code’s
 - Compare a Parallel technique’s consensus with Sequential code’s 
+
+<hr/>
+
+<span style="color:red">**IMPORTANT: Don't copy exactly as you will be subject to academic misconduct.** Please modify the variables, re-paraphrase, delete comments, add/remove lines, etc. before submitting yours.</span>
+To write a more comprehensive report, look through all the materials just like you are revising for exam so that you can remind yourself of the areas you may forget!  
+I achieved 50/50 with this report.  
