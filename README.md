@@ -1,13 +1,18 @@
-## Promoter
+# Promoter
 ## parallel-project-CAB401
 
+## My Speedup Graph
 
-<span style="color:red">**IMPORTANT: Don't copy exactly as you may be subject to academic misconduct.** Please modify the variables, re-paraphrase, delete comments, add/remove lines, etc. before submitting yours.</span>
+<center>
+<figure><img src="public/speedup_graph.png" alt="Figure: Speedup achieved in this project" style="width:600px"><figcaption align="center"><br>Figure: Speedup achieved in this project</figcaption></figure>
+</center>
+
+<span style="color:red">**IMPORTANT: Don't copy exactly as you will be subject to academic misconduct.** Please modify the variables, re-paraphrase, delete comments, add/remove lines, etc. before submitting yours.</span>
 To write a more comprehensive report, look through all the materials just like you are revising for exam so that you can remind yourself of the areas you may forget!  
 I achieved 50/50 with this report.  
 <hr/>
 
-### Instructions to run app with each technique  
+## Instructions to run app with each technique  
 Step 1: Open Zip file and open the folder with IntelliJ  
 Step 2: Open src > qut  
 Step 3: Now we are in qut directory:  
